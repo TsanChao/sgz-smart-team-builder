@@ -151,19 +151,28 @@ class DataManager:
             print(f"正在获取第 {page} 页公告...")
             announcements = self.get_announcement_list(page=page, size=size)
             if announcements:
+                # 检查响应数据结构
+                result = announcements.get("result", {})
+                data = result.get("data", {}) if isinstance(result, dict) else result
+                items = data.get("list", []) if isinstance(data, dict) else data
+                total = data.get("totalCount", 0) if isinstance(data, dict) else 0
+                
+                # 如果没有result字段，尝试旧的格式
+                if not result and not data:
+                    data = announcements.get("data", {})
+                    items = data.get("list", [])
+                    total = data.get("total", 0)
+                
                 all_announcements.append(announcements)
-                # 检查是否还有更多页面
-                data = announcements.get("data", {})
-                total = data.get("total", 0)
-                current_size = len(data.get("list", []))
-                if page * size >= total or current_size < size:
-                    # 已经获取了所有公告
-                    print(f"已获取所有 {total} 条公告")
+                print(f"第{page}页获取到 {len(items)} 条公告")
+                
+                # 检查是否已获取完所有公告
+                if page * size >= total or len(items) < size:
+                    print(f"已获取完所有公告，共 {total} 条")
                     break
                 page += 1
             else:
-                # 获取失败，停止获取
-                print(f"获取第 {page} 页公告失败，停止获取更多页面")
+                print(f"获取第 {page} 页公告失败，停止获取")
                 break
                 
         return all_announcements
@@ -212,7 +221,17 @@ class DataManager:
         """
         maintenance_announcements = []
         for page_announcements in announcements:
-            for item in page_announcements.get("data", {}).get("list", []):
+            # 适配API返回数据的不同格式
+            result = page_announcements.get("result", {})
+            data = result.get("data", {}) if isinstance(result, dict) else result
+            items = data.get("list", []) if isinstance(data, dict) else data
+            
+            # 如果没有result字段，尝试旧的格式
+            if not result and not data:
+                data = page_announcements.get("data", {})
+                items = data.get("list", [])
+            
+            for item in items:
                 title = item.get("title", "")
                 if "维护更新公告" in title:
                     maintenance_announcements.append(item)
@@ -292,6 +311,15 @@ class DataManager:
             # 获取公告内容
             content = announcement_detail.get("data", {}).get("infoDetail", {}).get("content", "")
             title = announcement_detail.get("data", {}).get("infoDetail", {}).get("title", "")
+            
+            # 如果使用新格式，尝试从result字段获取
+            if not title:
+                result = announcement_detail.get("result", {})
+                data = result.get("data", {}) if isinstance(result, dict) else result
+                info_detail = data.get("infoDetail", {}) if isinstance(data, dict) else data
+                if info_detail:
+                    content = info_detail.get("content", "")
+                    title = info_detail.get("title", "")
             
             print(f"处理公告: {title}")
             

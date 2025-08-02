@@ -22,7 +22,17 @@ def process_july_30_update():
     # 计算总公告数
     total_announcements = 0
     for page_announcements in all_announcements:
-        total_announcements += len(page_announcements.get('data', {}).get('list', []))
+        # 适配API返回数据的不同格式
+        result = page_announcements.get("result", {})
+        data = result.get("data", {}) if isinstance(result, dict) else result
+        items = data.get("list", []) if isinstance(data, dict) else data
+        
+        # 如果没有result字段，尝试旧的格式
+        if not result and not data:
+            data = page_announcements.get("data", {})
+            items = data.get("list", [])
+        
+        total_announcements += len(items)
     print(f"总共包含 {total_announcements} 条公告")
     
     # 筛选维护更新公告
@@ -32,12 +42,18 @@ def process_july_30_update():
     # 按发布时间排序
     maintenance_announcements.sort(key=lambda x: x.get("publishTime", ""), reverse=True)
     
+    # 显示最近几条维护更新公告
+    print("\n最近的维护更新公告:")
+    for i, announcement in enumerate(maintenance_announcements[:10]):
+        print(f"{i+1}. {announcement.get('title')} (发布时间: {announcement.get('publishTime')})")
+    
     # 查找7月30日的更新公告
     july_30_announcement = None
     for announcement in maintenance_announcements:
         title = announcement.get("title", "")
         publish_time = announcement.get("publishTime", "")
-        if "7月30日" in title or "2025-07-30" in publish_time:
+        # 匹配7月30日的公告
+        if "7月30日" in title or "2025-07-30" in publish_time or "2025.07.30" in publish_time:
             july_30_announcement = announcement
             break
     
@@ -48,7 +64,26 @@ def process_july_30_update():
         print("\n=== 获取公告详情 ===")
         detail = data_manager.get_announcement_detail(july_30_announcement.get('id'))
         if detail:
-            title = detail.get('data', {}).get('infoDetail', {}).get('title', '')
+            # 适配新旧两种数据格式
+            title = ""
+            content = ""
+            
+            # 尝试获取新格式的数据
+            result = detail.get("result", {})
+            data = result.get("data", {}) if isinstance(result, dict) else result
+            info_detail = data.get("infoDetail", {}) if isinstance(data, dict) else data
+            
+            if info_detail:
+                title = info_detail.get("title", "")
+                content = info_detail.get("content", "")
+            
+            # 尝试获取旧格式的数据
+            if not title:
+                data = detail.get("data", {})
+                info_detail = data.get("infoDetail", {})
+                title = info_detail.get("title", "")
+                content = info_detail.get("content", "")
+            
             print(f"公告标题: {title}")
             
             # 处理更新公告
@@ -67,10 +102,7 @@ def process_july_30_update():
             print("获取公告详情失败")
     else:
         print("未找到7月30日维护更新公告")
-        # 显示最近几条维护更新公告
-        print("\n最近的维护更新公告:")
-        for i, announcement in enumerate(maintenance_announcements[:5]):
-            print(f"{i+1}. {announcement.get('title')} (发布时间: {announcement.get('publishTime')})")
+        print("请注意，这可能是因为日期格式不同，请检查上面显示的最近公告")
 
 if __name__ == "__main__":
     process_july_30_update()
