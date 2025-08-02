@@ -22,16 +22,8 @@ def process_july_30_update():
     # 计算总公告数
     total_announcements = 0
     for page_announcements in all_announcements:
-        # 适配API返回数据的不同格式
         result = page_announcements.get("result", {})
-        data = result.get("data", {}) if isinstance(result, dict) else result
-        items = data.get("list", []) if isinstance(data, dict) else data
-        
-        # 如果没有result字段，尝试旧的格式
-        if not result and not data:
-            data = page_announcements.get("data", {})
-            items = data.get("list", [])
-        
+        items = result.get("list", [])
         total_announcements += len(items)
     print(f"总共包含 {total_announcements} 条公告")
     
@@ -64,25 +56,12 @@ def process_july_30_update():
         print("\n=== 获取公告详情 ===")
         detail = data_manager.get_announcement_detail(july_30_announcement.get('id'))
         if detail:
-            # 适配新旧两种数据格式
-            title = ""
-            content = ""
-            
-            # 尝试获取新格式的数据
+            # 获取公告标题和内容
             result = detail.get("result", {})
-            data = result.get("data", {}) if isinstance(result, dict) else result
-            info_detail = data.get("infoDetail", {}) if isinstance(data, dict) else data
-            
-            if info_detail:
-                title = info_detail.get("title", "")
-                content = info_detail.get("content", "")
-            
-            # 尝试获取旧格式的数据
-            if not title:
-                data = detail.get("data", {})
-                info_detail = data.get("infoDetail", {})
-                title = info_detail.get("title", "")
-                content = info_detail.get("content", "")
+            data = result.get("data", {})
+            info_detail = data.get("infoDetail", {})
+            title = info_detail.get("title", "")
+            content = info_detail.get("content", "")
             
             print(f"公告标题: {title}")
             

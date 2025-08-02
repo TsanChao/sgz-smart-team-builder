@@ -147,34 +147,38 @@ class DataManager:
         all_announcements = []
         page = 1
         
-        while True:
+        # 先获取第一页，获取总数
+        print(f"正在获取第 {page} 页公告...")
+        first_page = self.get_announcement_list(page=page, size=size)
+        if not first_page:
+            print(f"获取第 {page} 页公告失败，停止获取")
+            return []
+        
+        # 解析第一页数据
+        result = first_page.get("result", {})
+        total = result.get("totalCount", 0)
+        items = result.get("list", [])
+        
+        all_announcements.append(first_page)
+        print(f"第{page}页获取到 {len(items)} 条公告")
+        
+        # 计算总页数
+        total_pages = (total + size - 1) // size if total > 0 else 1
+        print(f"总共有 {total} 条公告, {total_pages} 页")
+        
+        # 获取后续页面
+        for page in range(2, min(total_pages + 1, 10)):  # 限制最多获取10页
             print(f"正在获取第 {page} 页公告...")
-            announcements = self.get_announcement_list(page=page, size=size)
-            if announcements:
-                # 检查响应数据结构
-                result = announcements.get("result", {})
-                data = result.get("data", {}) if isinstance(result, dict) else result
-                items = data.get("list", []) if isinstance(data, dict) else data
-                total = data.get("totalCount", 0) if isinstance(data, dict) else 0
-                
-                # 如果没有result字段，尝试旧的格式
-                if not result and not data:
-                    data = announcements.get("data", {})
-                    items = data.get("list", [])
-                    total = data.get("total", 0)
-                
-                all_announcements.append(announcements)
+            page_data = self.get_announcement_list(page=page, size=size)
+            if page_data:
+                all_announcements.append(page_data)
+                result = page_data.get("result", {})
+                items = result.get("list", [])
                 print(f"第{page}页获取到 {len(items)} 条公告")
-                
-                # 检查是否已获取完所有公告
-                if page * size >= total or len(items) < size:
-                    print(f"已获取完所有公告，共 {total} 条")
-                    break
-                page += 1
             else:
                 print(f"获取第 {page} 页公告失败，停止获取")
                 break
-                
+        
         return all_announcements
     
     def get_announcement_detail(self, announcement_id: str) -> Optional[Dict[str, Any]]:
@@ -221,15 +225,9 @@ class DataManager:
         """
         maintenance_announcements = []
         for page_announcements in announcements:
-            # 适配API返回数据的不同格式
+            # 根据API的正确格式解析数据
             result = page_announcements.get("result", {})
-            data = result.get("data", {}) if isinstance(result, dict) else result
-            items = data.get("list", []) if isinstance(data, dict) else data
-            
-            # 如果没有result字段，尝试旧的格式
-            if not result and not data:
-                data = page_announcements.get("data", {})
-                items = data.get("list", [])
+            items = result.get("list", [])
             
             for item in items:
                 title = item.get("title", "")
@@ -308,18 +306,12 @@ class DataManager:
             更新是否成功
         """
         try:
-            # 获取公告内容
-            content = announcement_detail.get("data", {}).get("infoDetail", {}).get("content", "")
-            title = announcement_detail.get("data", {}).get("infoDetail", {}).get("title", "")
-            
-            # 如果使用新格式，尝试从result字段获取
-            if not title:
-                result = announcement_detail.get("result", {})
-                data = result.get("data", {}) if isinstance(result, dict) else result
-                info_detail = data.get("infoDetail", {}) if isinstance(data, dict) else data
-                if info_detail:
-                    content = info_detail.get("content", "")
-                    title = info_detail.get("title", "")
+            # 获取公告内容和标题
+            result = announcement_detail.get("result", {})
+            data = result.get("data", {})
+            info_detail = data.get("infoDetail", {})
+            content = info_detail.get("content", "")
+            title = info_detail.get("title", "")
             
             print(f"处理公告: {title}")
             
