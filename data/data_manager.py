@@ -134,20 +134,21 @@ class DataManager:
             print(f"请求公告列表时出错: {e}")
             return None
     
-    def get_multiple_announcement_pages(self, max_pages: int = 5, size: int = 20) -> List[Dict[str, Any]]:
+    def get_all_announcements(self, size: int = 20) -> List[Dict[str, Any]]:
         """
-        获取多页公告列表
+        获取所有公告列表（不限制页数）
         
         Args:
-            max_pages: 最大页数
             size: 每页数量
             
         Returns:
-            公告列表数据列表
+            所有公告列表数据
         """
         all_announcements = []
-        for page in range(1, max_pages + 1):
-            print(f"获取第 {page} 页公告...")
+        page = 1
+        
+        while True:
+            print(f"正在获取第 {page} 页公告...")
             announcements = self.get_announcement_list(page=page, size=size)
             if announcements:
                 all_announcements.append(announcements)
@@ -157,11 +158,14 @@ class DataManager:
                 current_size = len(data.get("list", []))
                 if page * size >= total or current_size < size:
                     # 已经获取了所有公告
+                    print(f"已获取所有 {total} 条公告")
                     break
+                page += 1
             else:
                 # 获取失败，停止获取
                 print(f"获取第 {page} 页公告失败，停止获取更多页面")
                 break
+                
         return all_announcements
     
     def get_announcement_detail(self, announcement_id: str) -> Optional[Dict[str, Any]]:
@@ -198,10 +202,10 @@ class DataManager:
     
     def filter_maintenance_announcements(self, announcements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        从多页公告中筛选维护更新公告
+        从所有公告中筛选维护更新公告
         
         Args:
-            announcements: 多页公告列表数据
+            announcements: 所有公告列表数据
             
         Returns:
             维护更新公告列表
@@ -347,19 +351,16 @@ class DataManager:
         except Exception as e:
             print(f"保存更新日志时出错: {e}")
     
-    def check_for_updates(self, max_pages: int = 5) -> bool:
+    def check_for_updates(self) -> bool:
         """
         检查是否有新的维护更新公告
         
-        Args:
-            max_pages: 检查的最大页数
-            
         Returns:
             是否有新的更新
         """
-        # 获取多页公告列表
-        print(f"正在获取最多 {max_pages} 页的公告...")
-        all_announcements = self.get_multiple_announcement_pages(max_pages=max_pages)
+        # 获取所有公告列表
+        print("正在获取所有公告...")
+        all_announcements = self.get_all_announcements(size=20)
         if not all_announcements:
             print("获取公告列表失败")
             return False
@@ -375,6 +376,9 @@ class DataManager:
         # 按发布时间排序，最新的在前面
         maintenance_announcements.sort(key=lambda x: x.get("publishTime", ""), reverse=True)
         
+        # 加载已处理的公告ID列表
+        processed_ids = self._load_processed_announcement_ids()
+        
         # 检查每条公告是否已处理过
         for announcement in maintenance_announcements:
             announcement_id = announcement.get("id")
@@ -384,7 +388,7 @@ class DataManager:
             print(f"检查公告: {announcement_title} (ID: {announcement_id})")
             
             # 检查是否已处理过此公告
-            if self._is_announcement_processed(announcement_id):
+            if str(announcement_id) in processed_ids:
                 print("此公告已处理过")
                 continue
             
@@ -392,12 +396,11 @@ class DataManager:
             print("获取公告详情...")
             detail = self.get_announcement_detail(announcement_id)
             if detail:
-                # 标记公告为已处理
-                self._mark_announcement_as_processed(announcement_id, announcement_title, announcement_time)
-                
                 # 处理更新公告
                 success = self.update_local_data_with_announcement(detail)
                 if success:
+                    # 标记公告为已处理
+                    self._mark_announcement_as_processed(announcement_id, announcement_title, announcement_time)
                     return True
             else:
                 print("获取公告详情失败")
@@ -405,25 +408,22 @@ class DataManager:
         print("没有新的未处理公告")
         return False
     
-    def _is_announcement_processed(self, announcement_id: str) -> bool:
+    def _load_processed_announcement_ids(self) -> set:
         """
-        检查公告是否已处理过
+        加载已处理的公告ID列表
         
-        Args:
-            announcement_id: 公告ID
-            
         Returns:
-            是否已处理
+            已处理的公告ID集合
         """
-        checkpoint_file = "last_processed_announcement.json"
+        checkpoint_file = "processed_announcements.json"
         if os.path.exists(checkpoint_file):
             try:
                 with open(checkpoint_file, 'r', encoding='utf-8') as f:
-                    checkpoint = json.load(f)
-                return str(checkpoint.get("last_processed_id")) == str(announcement_id)
+                    checkpoints = json.load(f)
+                return set(str(cp.get("id")) for cp in checkpoints)
             except Exception as e:
                 print(f"读取检查点文件时出错: {e}")
-        return False
+        return set()
     
     def _mark_announcement_as_processed(self, announcement_id: str, title: str, publish_time: str) -> None:
         """
@@ -434,16 +434,29 @@ class DataManager:
             title: 公告标题
             publish_time: 发布时间
         """
-        checkpoint_data = {
-            "last_processed_id": announcement_id,
+        # 加载现有检查点
+        checkpoint_file = "processed_announcements.json"
+        checkpoints = []
+        if os.path.exists(checkpoint_file):
+            try:
+                with open(checkpoint_file, 'r', encoding='utf-8') as f:
+                    checkpoints = json.load(f)
+            except Exception as e:
+                print(f"读取检查点文件时出错: {e}")
+        
+        # 添加新检查点
+        new_checkpoint = {
+            "id": announcement_id,
             "title": title,
             "publish_time": publish_time,
             "processed_time": datetime.now().isoformat()
         }
+        checkpoints.append(new_checkpoint)
         
-        checkpoint_file = "last_processed_announcement.json"
+        # 保存检查点
         try:
             with open(checkpoint_file, 'w', encoding='utf-8') as f:
-                json.dump(checkpoint_data, f, ensure_ascii=False, indent=2)
+                json.dump(checkpoints, f, ensure_ascii=False, indent=2)
+            print(f"已标记公告 {announcement_id} 为已处理")
         except Exception as e:
             print(f"保存检查点文件时出错: {e}")
