@@ -14,26 +14,35 @@ def test_announcement_features():
     # 创建数据管理器实例
     data_manager = DataManager("data/consolidated_ocr_data.json")
     
-    print("=== 测试获取公告列表 ===")
-    # 获取公告列表
-    announcements = data_manager.get_announcement_list(page=1, size=10)
-    if announcements:
-        print(f"成功获取到 {len(announcements.get('data', {}).get('list', []))} 条公告")
+    print("=== 测试获取多页公告列表 ===")
+    # 获取多页公告列表
+    all_announcements = data_manager.get_multiple_announcement_pages(max_pages=3, size=20)
+    print(f"成功获取 {len(all_announcements)} 页公告")
+    
+    if all_announcements:
+        # 计算总公告数
+        total_announcements = 0
+        for page_announcements in all_announcements:
+            total_announcements += len(page_announcements.get('data', {}).get('list', []))
+        print(f"总共获取到 {total_announcements} 条公告")
         
         # 筛选维护更新公告
-        maintenance_announcements = data_manager.filter_maintenance_announcements(announcements)
+        maintenance_announcements = data_manager.filter_maintenance_announcements(all_announcements)
         print(f"筛选出 {len(maintenance_announcements)} 条维护更新公告")
         
         if maintenance_announcements:
-            # 显示最新的维护更新公告
-            latest = maintenance_announcements[0]
-            print(f"最新的维护更新公告: {latest.get('title')} (ID: {latest.get('id')})")
+            # 显示最新的几条维护更新公告
+            print("\n最新的维护更新公告:")
+            for i, announcement in enumerate(maintenance_announcements[:3]):
+                print(f"{i+1}. {announcement.get('title')} (ID: {announcement.get('id')})")
             
-            # 获取公告详情
+            # 获取第一条公告的详情
             print("\n=== 测试获取公告详情 ===")
-            detail = data_manager.get_announcement_detail(latest.get('id'))
+            first_announcement = maintenance_announcements[0]
+            detail = data_manager.get_announcement_detail(first_announcement.get('id'))
             if detail:
-                print(f"成功获取公告详情: {detail.get('data', {}).get('infoDetail', {}).get('title', '')}")
+                title = detail.get('data', {}).get('infoDetail', {}).get('title', '')
+                print(f"成功获取公告详情: {title}")
                 
                 # 测试解析更新内容
                 content = detail.get('data', {}).get('infoDetail', {}).get('content', '')
@@ -63,7 +72,7 @@ def test_announcement_features():
     
     print("\n=== 测试检查更新 ===")
     # 测试检查更新功能
-    has_updates = data_manager.check_for_updates()
+    has_updates = data_manager.check_for_updates(max_pages=3)
     print(f"是否有新的更新: {has_updates}")
 
 if __name__ == "__main__":

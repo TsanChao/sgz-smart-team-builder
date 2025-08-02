@@ -134,6 +134,36 @@ class DataManager:
             print(f"请求公告列表时出错: {e}")
             return None
     
+    def get_multiple_announcement_pages(self, max_pages: int = 5, size: int = 20) -> List[Dict[str, Any]]:
+        """
+        获取多页公告列表
+        
+        Args:
+            max_pages: 最大页数
+            size: 每页数量
+            
+        Returns:
+            公告列表数据列表
+        """
+        all_announcements = []
+        for page in range(1, max_pages + 1):
+            print(f"获取第 {page} 页公告...")
+            announcements = self.get_announcement_list(page=page, size=size)
+            if announcements:
+                all_announcements.append(announcements)
+                # 检查是否还有更多页面
+                data = announcements.get("data", {})
+                total = data.get("total", 0)
+                current_size = len(data.get("list", []))
+                if page * size >= total or current_size < size:
+                    # 已经获取了所有公告
+                    break
+            else:
+                # 获取失败，停止获取
+                print(f"获取第 {page} 页公告失败，停止获取更多页面")
+                break
+        return all_announcements
+    
     def get_announcement_detail(self, announcement_id: str) -> Optional[Dict[str, Any]]:
         """
         获取公告详情
@@ -166,21 +196,22 @@ class DataManager:
             print(f"请求公告详情时出错: {e}")
             return None
     
-    def filter_maintenance_announcements(self, announcements: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def filter_maintenance_announcements(self, announcements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        筛选维护更新公告
+        从多页公告中筛选维护更新公告
         
         Args:
-            announcements: 公告列表数据
+            announcements: 多页公告列表数据
             
         Returns:
             维护更新公告列表
         """
         maintenance_announcements = []
-        for item in announcements.get("data", {}).get("list", []):
-            title = item.get("title", "")
-            if "维护更新公告" in title:
-                maintenance_announcements.append(item)
+        for page_announcements in announcements:
+            for item in page_announcements.get("data", {}).get("list", []):
+                title = item.get("title", "")
+                if "维护更新公告" in title:
+                    maintenance_announcements.append(item)
         return maintenance_announcements
     
     def parse_update_content(self, content: str) -> Dict[str, List[Dict[str, Any]]]:
@@ -316,46 +347,62 @@ class DataManager:
         except Exception as e:
             print(f"保存更新日志时出错: {e}")
     
-    def check_for_updates(self) -> bool:
+    def check_for_updates(self, max_pages: int = 5) -> bool:
         """
         检查是否有新的维护更新公告
         
+        Args:
+            max_pages: 检查的最大页数
+            
         Returns:
             是否有新的更新
         """
-        # 获取最新的公告列表
-        announcement_list = self.get_announcement_list()
-        if not announcement_list:
+        # 获取多页公告列表
+        print(f"正在获取最多 {max_pages} 页的公告...")
+        all_announcements = self.get_multiple_announcement_pages(max_pages=max_pages)
+        if not all_announcements:
+            print("获取公告列表失败")
             return False
             
         # 筛选维护更新公告
-        maintenance_announcements = self.filter_maintenance_announcements(announcement_list)
+        maintenance_announcements = self.filter_maintenance_announcements(all_announcements)
         if not maintenance_announcements:
             print("未找到新的维护更新公告")
             return False
+        
+        print(f"找到 {len(maintenance_announcements)} 条维护更新公告")
+        
+        # 按发布时间排序，最新的在前面
+        maintenance_announcements.sort(key=lambda x: x.get("publishTime", ""), reverse=True)
+        
+        # 检查每条公告是否已处理过
+        for announcement in maintenance_announcements:
+            announcement_id = announcement.get("id")
+            announcement_title = announcement.get("title")
+            announcement_time = announcement.get("publishTime")
             
-        # 获取最新的维护更新公告
-        latest_announcement = maintenance_announcements[0]
-        latest_id = latest_announcement.get("id")
-        latest_title = latest_announcement.get("title")
-        latest_time = latest_announcement.get("publishTime")
-        
-        print(f"最新的维护更新公告: {latest_title} (ID: {latest_id})")
-        
-        # 检查是否已处理过此公告
-        if self._is_announcement_processed(latest_id):
-            print("此公告已处理过")
-            return False
-        
-        # 获取公告详情
-        detail = self.get_announcement_detail(latest_id)
-        if detail:
-            # 标记公告为已处理
-            self._mark_announcement_as_processed(latest_id, latest_title, latest_time)
+            print(f"检查公告: {announcement_title} (ID: {announcement_id})")
             
-            # 处理更新公告
-            return self.update_local_data_with_announcement(detail)
+            # 检查是否已处理过此公告
+            if self._is_announcement_processed(announcement_id):
+                print("此公告已处理过")
+                continue
+            
+            # 获取公告详情
+            print("获取公告详情...")
+            detail = self.get_announcement_detail(announcement_id)
+            if detail:
+                # 标记公告为已处理
+                self._mark_announcement_as_processed(announcement_id, announcement_title, announcement_time)
+                
+                # 处理更新公告
+                success = self.update_local_data_with_announcement(detail)
+                if success:
+                    return True
+            else:
+                print("获取公告详情失败")
         
+        print("没有新的未处理公告")
         return False
     
     def _is_announcement_processed(self, announcement_id: str) -> bool:
