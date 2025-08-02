@@ -101,6 +101,41 @@ def analyze_synergy():
         "synergy_score": synergy_score
     })
 
+@api_bp.route('/announcements', methods=['GET'])
+def get_announcements():
+    """获取游戏公告列表"""
+    page = request.args.get('page', 1, type=int)
+    size = request.args.get('size', 20, type=int)
+    
+    # 获取公告列表
+    announcements = data_manager.get_announcement_list(page=page, size=size)
+    if announcements:
+        return jsonify(announcements)
+    else:
+        return jsonify({
+            "error": "获取公告列表失败"
+        }), 500
+
+@api_bp.route('/announcements/<announcement_id>', methods=['GET'])
+def get_announcement(announcement_id):
+    """获取公告详情"""
+    # 获取公告详情
+    detail = data_manager.get_announcement_detail(announcement_id)
+    if detail:
+        return jsonify(detail)
+    else:
+        return jsonify({
+            "error": "获取公告详情失败"
+        }), 500
+
+@api_bp.route('/announcements/check-updates', methods=['POST'])
+def check_updates():
+    """检查是否有新的维护更新公告"""
+    has_updates = data_manager.check_for_updates()
+    return jsonify({
+        "has_updates": has_updates
+    })
+
 @api_bp.route('/health', methods=['GET'])
 def health_check():
     """健康检查接口"""
