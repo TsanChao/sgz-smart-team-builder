@@ -15,29 +15,56 @@
 sgz-smart-team-builder/
 ├── app.py                  # 后端主应用文件
 ├── config.py               # 配置文件
+├── requirements.txt        # 依赖包列表
+├── DEVELOPMENT_PLAN.md     # 开发计划
 ├── data/                   # 数据处理模块
+│   ├── __init__.py
 │   ├── data_manager.py     # 数据管理器
 │   └── consolidated_ocr_data.json  # 数据文件
 ├── core/                   # 核心逻辑模块
+│   ├── __init__.py
 │   ├── synergy_analyzer.py # 战法协同分析器 (核心模块)
 │   ├── recommender.py      # 推荐引擎
 │   ├── level_calculator.py # 等级属性计算器
 │   └── damage_calculator.py # 伤害计算器
 ├── api/                    # API接口模块
+│   ├── __init__.py
 │   └── routes.py           # 路由定义
 ├── static/                 # 前端静态文件
+│   ├── index.html
 │   ├── css/
-│   ├── js/
-│   └── index.html
+│   │   └── style.css
+│   └── js/
+│       └── main.js
 └── assets/portraits/       # 武将头像图片
 ```
 
 ## 安装和运行
 
-1. 克隆项目到本地
-2. 安装依赖: `pip install -r requirements.txt`
-3. 运行应用: `python app.py`
-4. 在浏览器中访问: `http://localhost:5000`
+1. 克隆项目到本地：
+   ```
+   git clone https://github.com/TsanChao/sgz-smart-team-builder.git
+   cd sgz-smart-team-builder
+   ```
+
+2. 安装依赖：
+   ```
+   pip install -r requirements.txt
+   ```
+
+3. 运行应用：
+   ```
+   python app.py
+   ```
+
+4. 在浏览器中访问：
+   ```
+   http://localhost:5000
+   ```
+
+## 开发计划
+
+请查看 [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) 文件了解详细的开发计划和进度。
 
 ## 更新机制
 
