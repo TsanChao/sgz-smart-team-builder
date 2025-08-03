@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三国志战略版智能配将工具</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>三国志战略版智能配将工具</h1>
+        <nav>
+            <button id="recommend-tab" class="nav-tab active">智能配将</button>
+            <button id="data-tab" class="nav-tab">数据管理</button>
+            <button id="about-tab" class="nav-tab">关于</button>
+        </nav>
+    </header>
+    
+    <main>
+        <!-- 智能配将模块 -->
+        <section id="recommendation-module" class="module active">
+            <div class="settings-panel">
+                <h2>阵容推荐设置</h2>
+                <div class="setting-row">
+                    <label for="required-hero">必须包含武将:</label>
+                    <select id="required-hero">
+                        <option value="">请选择</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label for="excluded-hero">排除武将:</label>
+                    <select id="excluded-hero">
+                        <option value="">请选择</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label for="recommend-level">推荐等级:</label>
+                    <select id="recommend-level">
+                        <option value="50">50级</option>
+                        <option value="40">40级</option>
+                        <option value="30">30级</option>
+                        <option value="20">20级</option>
+                        <option value="1">1级</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label for="recommend-count">推荐数量:</label>
+                    <input type="number" id="recommend-count" min="1" max="20" value="10">
+                </div>
+                <div class="setting-row">
+                    <label for="troop-count">兵力数量:</label>
+                    <input type="number" id="troop-count" min="1000" max="20000" step="1000" value="10000">
+                </div>
+                <div class="setting-row">
+                    <label>
+                        <input type="checkbox" id="damage-verification" checked> 启用伤害验证
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <button id="start-recommendation">开始推荐</button>
+                    <button id="reset-settings">重置条件</button>
+                </div>
+            </div>
+            
+            <div class="recommendation-results">
+                <h2>推荐阵容</h2>
+                <div id="recommendation-list">
+                    <!-- 推荐结果将在这里显示 -->
+                </div>
+            </div>
+        </section>
+        
+        <!-- 数据管理模块 -->
+        <section id="data-management-module" class="module">
+            <h2>武将管理</h2>
+            <div class="data-actions">
+                <button id="add-hero">新增武将</button>
+                <button id="import-data">导入数据</button>
+                <button id="export-data">导出数据</button>
+                <button id="refresh-data">刷新</button>
+            </div>
+            <div class="search-box">
+                <input type="text" id="data-search" placeholder="搜索武将...">
+                <button id="search-data-button">搜索</button>
+            </div>
+            <div id="hero-data-table">
+                <!-- 武将数据表格将在这里显示 -->
+            </div>
+        </section>
+        
+        <!-- 关于模块 -->
+        <section id="about-module" class="module">
+            <h2>关于</h2>
+            <div class="about-content">
+                <p>三国志战略版智能配将工具 v1.0</p>
+                <p>本工具专注于战法协同分析，提供智能化的队伍搭配建议。</p>
+                <p>核心功能：</p>
+                <ul>
+                    <li>战法协同分析</li>
+                    <li>智能配将推荐</li>
+                    <li>队伍协同评分</li>
+                    <li>详细分析报告</li>
+                </ul>
+            </div>
+        </section>
+        
+        <!-- 协同分析弹窗 -->
+        <div id="synergy-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="synergy-details">
+                    <!-- 协同分析详情将在这里显示 -->
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 三国志战略版智能配将工具</p>
+    </footer>
+    
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
