@@ -11,6 +11,10 @@ class DataManager:
         self.data_file_path = data_file_path
         self.data = self._load_data()
         self.announcement_api_url = "https://galaxias-api.lingxigames.com/ds/ajax/endpoint.json"
+        # 数据缓存
+        self._hero_cache = {}
+        self._skill_cache = {}
+        self._cache_max_size = 1000
     
     def _load_data(self) -> Dict[str, Any]:
         """加载游戏数据"""
@@ -50,12 +54,38 @@ class DataManager:
         return self.data.get('战法', {})
     
     def get_hero_by_name(self, name: str) -> Optional[Dict[str, Any]]:
-        """根据名称获取武将信息"""
-        return self.data.get('武将', {}).get(name)
+        """根据名称获取武将信息 - 带缓存"""
+        if name in self._hero_cache:
+            return self._hero_cache[name]
+        
+        hero_info = self.data.get('武将', {}).get(name)
+        
+        # 更新缓存
+        if len(self._hero_cache) >= self._cache_max_size:
+            # 清空缓存的一部分
+            keys_to_remove = list(self._hero_cache.keys())[:self._cache_max_size // 10]
+            for key in keys_to_remove:
+                del self._hero_cache[key]
+        
+        self._hero_cache[name] = hero_info
+        return hero_info
     
     def get_skill_by_name(self, name: str) -> Optional[Dict[str, Any]]:
-        """根据名称获取战法信息"""
-        return self.data.get('战法', {}).get(name)
+        """根据名称获取战法信息 - 带缓存"""
+        if name in self._skill_cache:
+            return self._skill_cache[name]
+        
+        skill_info = self.data.get('战法', {}).get(name)
+        
+        # 更新缓存
+        if len(self._skill_cache) >= self._cache_max_size:
+            # 清空缓存的一部分
+            keys_to_remove = list(self._skill_cache.keys())[:self._cache_max_size // 10]
+            for key in keys_to_remove:
+                del self._skill_cache[key]
+        
+        self._skill_cache[name] = skill_info
+        return skill_info
     
     def get_all_hero_names(self) -> List[str]:
         """获取所有武将名称列表"""
