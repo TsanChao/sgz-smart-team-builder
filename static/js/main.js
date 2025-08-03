@@ -358,6 +358,8 @@ function displayHeroData(heroes) {
                     <th>阵营</th>
                     <th>统御</th>
                     <th>标签</th>
+                    <th>自带战法</th>
+                    <th>传承战法</th>
                     <th>操作</th>
                 </tr>
             </thead>
@@ -372,6 +374,8 @@ function displayHeroData(heroes) {
                 <td>${info.阵营 || '未知'}</td>
                 <td>${info.统御 || '未知'}</td>
                 <td>${(info.标签 || []).join(', ')}</td>
+                <td><a href="javascript:void(0)" onclick="showSkillDetails('${info.自带战法 || ''}')">${info.自带战法 || ''}</a></td>
+                <td><a href="javascript:void(0)" onclick="showSkillDetails('${info.传承战法 || ''}')">${info.传承战法 || ''}</a></td>
                 <td>
                     <button onclick="editHero('${name}')">编辑</button>
                 </td>
@@ -731,4 +735,68 @@ function switchDataTab(tab) {
         document.getElementById('skill-filter-box').style.display = 'block';
         document.querySelector('.data-tab[data-tab="skill"]').classList.add('active');
     }
+}
+
+function showSkillDetails(skillName) {
+    if (!skillName) {
+        alert('战法名称为空');
+        return;
+    }
+    
+    // 获取战法详情
+    fetch(`${API_BASE_URL}/skills/${encodeURIComponent(skillName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('获取战法详情失败: ' + data.error);
+                return;
+            }
+            
+            // 显示战法详情
+            const skillInfo = data.info;
+            let html = `
+                <h2>${skillName}</h2>
+                <table class="data-table">
+                    <tr>
+                        <th>类型</th>
+                        <td>${skillInfo.类型 || '未知'}</td>
+                    </tr>
+                    <tr>
+                        <th>品质</th>
+                        <td>${skillInfo.品质 || '未知'}</td>
+                    </tr>
+                    <tr>
+                        <th>发动概率</th>
+                        <td>${skillInfo.发动概率 || '未知'}</td>
+                    </tr>
+                    <tr>
+                        <th>描述</th>
+                        <td>${skillInfo.描述 || '无描述'}</td>
+                    </tr>
+                </table>
+            `;
+            
+            document.getElementById('synergy-details').innerHTML = html;
+            document.getElementById('synergy-modal').style.display = 'block';
+            
+            // 确保模态框的关闭功能正常工作
+            const modal = document.getElementById('synergy-modal');
+            const closeBtn = modal.querySelector('.close');
+            
+            // 重新绑定关闭按钮事件
+            closeBtn.onclick = function() {
+                modal.style.display = 'none';
+            };
+            
+            // 重新绑定点击模态框外部关闭事件
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            };
+        })
+        .catch(error => {
+            console.error('获取战法详情失败:', error);
+            alert('获取战法详情失败，请稍后重试。');
+        });
 }
