@@ -7,10 +7,31 @@ class Recommender:
         self.data_manager = data_manager
         self.synergy_analyzer = synergy_analyzer
     
-    def recommend_teams(self, count=10, required_hero=None, excluded_heroes=None, strategy="balanced"):
+    def recommend_teams(self, count=10, required_hero=None, excluded_heroes=None, required_camp=None, required_tags=None, strategy="balanced"):
         """推荐最佳队伍组合 - 改进版"""
         # 获取所有可用武将
         all_heroes = self.data_manager.get_all_hero_names()
+        
+        # 处理必需阵营筛选
+        if required_camp:
+            filtered_heroes = []
+            for hero_name in all_heroes:
+                hero_info = self.data_manager.get_hero_by_name(hero_name)
+                if hero_info and hero_info.get("阵营") == required_camp:
+                    filtered_heroes.append(hero_name)
+            all_heroes = filtered_heroes
+        
+        # 处理必需标签筛选
+        if required_tags:
+            filtered_heroes = []
+            for hero_name in all_heroes:
+                hero_info = self.data_manager.get_hero_by_name(hero_name)
+                if hero_info:
+                    hero_tags = hero_info.get("标签", [])
+                    # 检查是否包含所有必需标签
+                    if all(tag in hero_tags for tag in required_tags):
+                        filtered_heroes.append(hero_name)
+            all_heroes = filtered_heroes
         
         # 处理排除的武将
         if excluded_heroes:

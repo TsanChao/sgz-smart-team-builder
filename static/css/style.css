@@ -37,3 +37,205 @@ footer {
     background-color: #333;
     color: white;
 }
+
+/* 搜索框样式 */
+.search-box {
+    margin-bottom: 1rem;
+}
+
+.search-box input {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 300px;
+    margin-right: 0.5rem;
+}
+
+.search-box button {
+    padding: 0.5rem 1rem;
+    background-color: #b32424;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.search-box button:hover {
+    background-color: #8b1d1d;
+}
+
+/* 武将卡片样式 */
+.hero-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.hero-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hero-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    border-color: #b32424;
+}
+
+.hero-card h3 {
+    margin-top: 0;
+    color: #b32424;
+}
+
+/* 已选武将样式 */
+.selected-heroes {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+}
+
+.selected-hero {
+    display: inline-block;
+    background-color: #b32424;
+    color: white;
+    padding: 0.5rem;
+    margin: 0.25rem;
+    border-radius: 4px;
+}
+
+.selected-hero button {
+    background-color: white;
+    color: #b32424;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    margin-left: 0.5rem;
+}
+
+/* 分页控件样式 */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1rem;
+    gap: 1rem;
+}
+
+.pagination button {
+    padding: 0.5rem 1rem;
+    background-color: #b32424;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.pagination button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.pagination button:hover:not(:disabled) {
+    background-color: #8b1d1d;
+}
+
+/* 表单样式 */
+form {
+    margin-bottom: 1rem;
+}
+
+form div {
+    margin-bottom: 1rem;
+}
+
+form label {
+    display: inline-block;
+    width: 120px;
+    font-weight: bold;
+}
+
+form input, form select {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+form button {
+    padding: 0.5rem 1rem;
+    background-color: #b32424;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #8b1d1d;
+}
+
+/* 推荐队伍样式 */
+.team-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.team-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    background-color: #f9f9f9;
+}
+
+.team-card h4 {
+    margin-top: 0;
+    color: #b32424;
+}
+
+.team-card ul {
+    padding-left: 1.5rem;
+}
+
+.team-card button {
+    margin-top: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.team-card button:hover {
+    background-color: #555;
+}
+
+/* 协同分析样式 */
+.synergy-score {
+    background-color: #b32424;
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.synergy-details .analysis-section {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+}
+
+.synergy-details .analysis-section h5 {
+    margin-top: 0;
+    color: #b32424;
+}
