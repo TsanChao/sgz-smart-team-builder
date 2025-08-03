@@ -11,7 +11,7 @@ def test_health_check():
     """测试健康检查接口"""
     print("=== 测试健康检查接口 ===")
     try:
-        response = requests.get(f"{BASE_URL}/health")
+        response = requests.get("http://localhost:5001/health")
         print(f"状态码: {response.status_code}")
         print(f"响应: {response.json()}")
     except Exception as e:

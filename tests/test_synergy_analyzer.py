@@ -27,6 +27,31 @@ def test_synergy_analyzer():
     # 测试计算协同评分
     synergy_score = synergy_analyzer.calculate_synergy_score(team_heroes)
     print(f"协同评分为: {synergy_score}")
+    
+    # 测试空队伍
+    empty_team_result = synergy_analyzer.analyze_synergy([])
+    print(f"空队伍分析结果: {empty_team_result}")
+    
+    empty_team_score = synergy_analyzer.calculate_synergy_score([])
+    print(f"空队伍评分: {empty_team_score}")
+    
+    # 测试不存在的武将
+    invalid_team = ["曹操", "不存在的武将", "荀彧"]
+    invalid_team_result = synergy_analyzer.analyze_synergy(invalid_team)
+    print(f"包含不存在武将的队伍分析结果: {invalid_team_result}")
+    
+    invalid_team_score = synergy_analyzer.calculate_synergy_score(invalid_team)
+    print(f"包含不存在武将的队伍评分: {invalid_team_score}")
+    
+    # 测试单个武将
+    single_hero_team = ["曹操"]
+    single_hero_score = synergy_analyzer.calculate_synergy_score(single_hero_team)
+    print(f"单个武将队伍评分: {single_hero_score}")
+    
+    # 测试四个武将
+    four_heroes_team = ["曹操", "夏侯惇", "荀彧", "郭嘉"]
+    four_heroes_score = synergy_analyzer.calculate_synergy_score(four_heroes_team)
+    print(f"四个武将队伍评分: {four_heroes_score}")
 
 if __name__ == "__main__":
     test_synergy_analyzer()
