@@ -72,19 +72,45 @@
         
         <!-- 数据管理模块 -->
         <section id="data-management-module" class="module">
-            <h2>武将管理</h2>
+            <h2>数据管理</h2>
+            <div class="data-tabs">
+                <button class="data-tab active" data-tab="hero" onclick="switchDataTab('hero')">武将</button>
+                <button class="data-tab" data-tab="skill" onclick="switchDataTab('skill')">战法</button>
+            </div>
             <div class="data-actions">
-                <button id="add-hero">新增武将</button>
+                <button id="add-hero">新增</button>
                 <button id="import-data">导入数据</button>
                 <button id="export-data">导出数据</button>
                 <button id="refresh-data">刷新</button>
             </div>
             <div class="search-box">
-                <input type="text" id="data-search" placeholder="搜索武将...">
+                <input type="text" id="data-search" placeholder="搜索...">
                 <button id="search-data-button">搜索</button>
+            </div>
+            <div class="filter-box" id="hero-filter-box">
+                <select id="hero-camp-filter" onchange="filterHeroData()">
+                    <option value="">全部阵营</option>
+                    <option value="魏">魏</option>
+                    <option value="蜀">蜀</option>
+                    <option value="吴">吴</option>
+                    <option value="群">群</option>
+                </select>
+            </div>
+            <div class="filter-box" id="skill-filter-box" style="display: none;">
+                <select id="skill-type-filter" onchange="filterSkillData()">
+                    <option value="">全部类型</option>
+                    <option value="主动">主动</option>
+                    <option value="被动">被动</option>
+                    <option value="指挥">指挥</option>
+                    <option value="突击">突击</option>
+                    <option value="内政">内政</option>
+                </select>
             </div>
             <div id="hero-data-table">
                 <!-- 武将数据表格将在这里显示 -->
+            </div>
+            <div id="skill-data-table" style="display: none;">
+                <!-- 战法数据表格将在这里显示 -->
             </div>
         </section>
         
@@ -103,6 +129,52 @@
                 </ul>
             </div>
         </section>
+        
+        <!-- 战法编辑模态框 -->
+        <div id="skill-edit-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>编辑战法</h2>
+                <form id="skill-edit-form">
+                    <input type="hidden" id="skill-original-name">
+                    <div class="setting-row">
+                        <label for="skill-name">战法名称:</label>
+                        <input type="text" id="skill-name" required>
+                    </div>
+                    <div class="setting-row">
+                        <label for="skill-type">类型:</label>
+                        <select id="skill-type" required>
+                            <option value="主动">主动</option>
+                            <option value="被动">被动</option>
+                            <option value="指挥">指挥</option>
+                            <option value="突击">突击</option>
+                            <option value="内政">内政</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <label for="skill-quality">品质:</label>
+                        <select id="skill-quality" required>
+                            <option value="S">S</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <label for="skill-probability">发动概率:</label>
+                        <input type="text" id="skill-probability">
+                    </div>
+                    <div class="setting-row">
+                        <label for="skill-description">描述:</label>
+                        <textarea id="skill-description" rows="3"></textarea>
+                    </div>
+                    <div class="setting-row">
+                        <button type="submit">保存</button>
+                        <button type="button" id="cancel-skill-edit">取消</button>
+                    </div>
+                </form>
+            </div>
+        </div>
         
         <!-- 协同分析弹窗 -->
         <div id="synergy-modal" class="modal">

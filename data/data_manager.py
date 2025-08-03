@@ -45,6 +45,27 @@ class DataManager:
         except Exception as e:
             print(f"保存数据文件时出错: {e}")
     
+    def update_skill(self, skill_name: str, skill_info: Dict[str, Any]) -> bool:
+        """更新战法信息"""
+        try:
+            # 确保数据结构存在
+            if '战法' not in self.data:
+                self.data['战法'] = {}
+            
+            # 更新战法信息
+            self.data['战法'][skill_name] = skill_info
+            
+            # 保存数据
+            self._save_data()
+            
+            # 更新缓存
+            self._skill_cache[skill_name] = skill_info
+            
+            return True
+        except Exception as e:
+            print(f"更新战法信息时出错: {e}")
+            return False
+    
     def get_heroes(self) -> Dict[str, Any]:
         """获取所有武将"""
         return self.data.get('武将', {})

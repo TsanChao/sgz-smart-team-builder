@@ -14,11 +14,12 @@ api_bp = Blueprint('api', __name__)
 
 @api_bp.route('/heroes', methods=['GET'])
 def get_heroes():
-    """获取所有武将（支持分页和搜索）"""
+    """获取所有武将（支持分页、搜索和筛选）"""
     # 获取查询参数
     page = request.args.get('page', 1, type=int)
     size = request.args.get('size', 20, type=int)
     search = request.args.get('search', '', type=str)
+    camp = request.args.get('camp', '', type=str)  # 按阵营筛选
     
     # 获取所有武将数据
     all_heroes = data_manager.get_heroes()
@@ -28,6 +29,14 @@ def get_heroes():
         filtered_heroes = {}
         for name, info in all_heroes.items():
             if search.lower() in name.lower() or search.lower() in str(info).lower():
+                filtered_heroes[name] = info
+        all_heroes = filtered_heroes
+    
+    # 如果有阵营筛选条件，进行过滤
+    if camp:
+        filtered_heroes = {}
+        for name, info in all_heroes.items():
+            if info.get("阵营", "") == camp:
                 filtered_heroes[name] = info
         all_heroes = filtered_heroes
     
@@ -64,11 +73,12 @@ def get_hero(hero_name):
 
 @api_bp.route('/skills', methods=['GET'])
 def get_skills():
-    """获取所有战法（支持分页和搜索）"""
+    """获取所有战法（支持分页、搜索和筛选）"""
     # 获取查询参数
     page = request.args.get('page', 1, type=int)
     size = request.args.get('size', 20, type=int)
     search = request.args.get('search', '', type=str)
+    skill_type = request.args.get('type', '', type=str)  # 按类型筛选
     
     # 获取所有战法数据
     all_skills = data_manager.get_skills()
@@ -78,6 +88,14 @@ def get_skills():
         filtered_skills = {}
         for name, info in all_skills.items():
             if search.lower() in name.lower() or search.lower() in str(info).lower():
+                filtered_skills[name] = info
+        all_skills = filtered_skills
+    
+    # 如果有类型筛选条件，进行过滤
+    if skill_type:
+        filtered_skills = {}
+        for name, info in all_skills.items():
+            if info.get("类型", "") == skill_type:
                 filtered_skills[name] = info
         all_skills = filtered_skills
     
@@ -111,6 +129,29 @@ def get_skill(skill_name):
         return jsonify({
             "error": f"未找到战法 {skill_name}"
         }), 404
+
+@api_bp.route('/skills/<skill_name>', methods=['PUT'])
+def update_skill(skill_name):
+    """更新指定战法的信息"""
+    try:
+        # 获取请求数据
+        data = request.get_json()
+        
+        # 更新战法信息
+        success = data_manager.update_skill(skill_name, data)
+        
+        if success:
+            return jsonify({
+                "message": f"战法 {skill_name} 更新成功"
+            })
+        else:
+            return jsonify({
+                "error": f"更新战法 {skill_name} 失败"
+            }), 500
+    except Exception as e:
+        return jsonify({
+            "error": f"更新战法时出错: {str(e)}"
+        }), 500
 
 @api_bp.route('/recommend', methods=['POST'])
 def recommend_teams():

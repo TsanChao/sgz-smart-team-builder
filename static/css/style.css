@@ -188,7 +188,7 @@ form {
     font-weight: bold;
 }
 
-.setting-row input, .setting-row select {
+.setting-row input, .setting-row select, .setting-row textarea {
     padding: 0.5rem;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -334,6 +334,30 @@ form {
 
 .data-table tr:nth-child(even) {
     background-color: #f9f9f9;
+}
+
+.data-tabs {
+    margin-bottom: 1rem;
+}
+
+.data-tab {
+    padding: 0.5rem 1rem;
+    background-color: #f0f0f0;
+    color: #333;
+    border: none;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    margin-right: 0.1rem;
+}
+
+.data-tab.active {
+    background-color: #b32424;
+    color: white;
+}
+
+.data-tab:hover {
+    background-color: #8b1d1d;
+    color: white;
 }
 
 .data-actions {

@@ -286,13 +286,19 @@ function initializeDataManagementModule() {
     
     // 初始化数据表格
     loadHeroData(1);
+    
+    // 初始化战法数据表格
+    loadSkillData(1);
 }
 
-function loadHeroData(page = 1, search = '') {
-    // 构建API URL，包含分页和搜索参数
+function loadHeroData(page = 1, search = '', camp = '') {
+    // 构建API URL，包含分页、搜索和阵营筛选参数
     let url = `${API_BASE_URL}/heroes?page=${page}&size=20`;
     if (search) {
         url += `&search=${encodeURIComponent(search)}`;
+    }
+    if (camp) {
+        url += `&camp=${encodeURIComponent(camp)}`;
     }
     
     fetch(url)
@@ -303,6 +309,27 @@ function loadHeroData(page = 1, search = '') {
         .catch(error => {
             console.error('加载武将数据失败:', error);
             document.getElementById('hero-data-table').innerHTML = '<p>加载武将数据失败，请稍后重试。</p>';
+        });
+}
+
+function loadSkillData(page = 1, search = '', skillType = '') {
+    // 构建API URL，包含分页、搜索和类型筛选参数
+    let url = `${API_BASE_URL}/skills?page=${page}&size=20`;
+    if (search) {
+        url += `&search=${encodeURIComponent(search)}`;
+    }
+    if (skillType) {
+        url += `&type=${encodeURIComponent(skillType)}`;
+    }
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            displaySkillData(data);
+        })
+        .catch(error => {
+            console.error('加载战法数据失败:', error);
+            document.getElementById('skill-data-table').innerHTML = '<p>加载战法数据失败，请稍后重试。</p>';
         });
 }
 
@@ -347,7 +374,6 @@ function displayHeroData(heroes) {
                 <td>${(info.标签 || []).join(', ')}</td>
                 <td>
                     <button onclick="editHero('${name}')">编辑</button>
-                    <button onclick="deleteHero('${name}')">删除</button>
                 </td>
             </tr>
         `;
@@ -360,6 +386,70 @@ function displayHeroData(heroes) {
             <button onclick="loadHeroData(${Math.max(1, page - 1)})" ${page <= 1 ? 'disabled' : ''}>上一页</button>
             <span>第 ${page} 页，共 ${totalPages} 页</span>
             <button onclick="loadHeroData(${Math.min(totalPages, page + 1)})" ${page >= totalPages ? 'disabled' : ''}>下一页</button>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function displaySkillData(skills) {
+    const container = document.getElementById('skill-data-table');
+    
+    if (!skills || !skills.skills) {
+        container.innerHTML = '<p>暂无战法数据。</p>';
+        return;
+    }
+    
+    // 获取分页信息
+    const page = skills.page || 1;
+    const size = skills.size || 20;
+    const totalPages = skills.total_pages || 1;
+    const count = skills.count || Object.keys(skills.skills).length;
+    
+    let html = `
+        <div class="table-info">
+            <p>共 ${count} 个战法，第 ${page} 页，共 ${totalPages} 页</p>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>名称</th>
+                    <th>类型</th>
+                    <th>品质</th>
+                    <th>发动概率</th>
+                    <th>描述</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    // 显示战法数据
+    Object.entries(skills.skills).forEach(([name, info]) => {
+        // 转义单引号以避免JavaScript语法错误
+        const escapedName = name.replace(/'/g, "\\'");
+        const infoStr = JSON.stringify(info).replace(/'/g, "\\'");
+        html += `
+            <tr>
+                <td>${name}</td>
+                <td>${info.类型 || '未知'}</td>
+                <td>${info.品质 || '未知'}</td>
+                <td>${info.发动概率 || '未知'}</td>
+                <td>${info.描述 || '无描述'}</td>
+                <td>
+                    <button onclick="editSkill('${escapedName}', ${infoStr})">编辑</button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+            </tbody>
+        </table>
+        <div class="pagination">
+            <button onclick="loadSkillData(${Math.max(1, page - 1)})" ${page <= 1 ? 'disabled' : ''}>上一页</button>
+            <span>第 ${page} 页，共 ${totalPages} 页</span>
+            <button onclick="loadSkillData(${Math.min(totalPages, page + 1)})" ${page >= totalPages ? 'disabled' : ''}>下一页</button>
         </div>
     `;
     
@@ -379,15 +469,35 @@ function exportData() {
 }
 
 function refreshData() {
-    // 刷新时从第一页开始，不清空搜索词
+    // 刷新时从第一页开始，不清空搜索词和筛选条件
     const keyword = document.getElementById('data-search').value.trim();
-    loadHeroData(1, keyword);
+    const camp = document.getElementById('hero-camp-filter') ? document.getElementById('hero-camp-filter').value : '';
+    const skillType = document.getElementById('skill-type-filter') ? document.getElementById('skill-type-filter').value : '';
+    loadHeroData(1, keyword, camp);
+    loadSkillData(1, keyword, skillType);
 }
 
 function searchData() {
     const keyword = document.getElementById('data-search').value.trim();
+    const camp = document.getElementById('hero-camp-filter') ? document.getElementById('hero-camp-filter').value : '';
+    const skillType = document.getElementById('skill-type-filter') ? document.getElementById('skill-type-filter').value : '';
     // 搜索时从第一页开始
-    loadHeroData(1, keyword);
+    loadHeroData(1, keyword, camp);
+    loadSkillData(1, keyword, skillType);
+}
+
+function filterHeroData() {
+    const camp = document.getElementById('hero-camp-filter').value;
+    const keyword = document.getElementById('data-search').value.trim();
+    // 筛选时从第一页开始
+    loadHeroData(1, keyword, camp);
+}
+
+function filterSkillData() {
+    const skillType = document.getElementById('skill-type-filter').value;
+    const keyword = document.getElementById('data-search').value.trim();
+    // 筛选时从第一页开始
+    loadSkillData(1, keyword, skillType);
 }
 
 function editHero(heroName) {
@@ -423,6 +533,95 @@ function initializeModal() {
             }
         };
     }
+    
+    // 初始化战法编辑模态框
+    initializeSkillEditModal();
+}
+
+function initializeSkillEditModal() {
+    const modal = document.getElementById('skill-edit-modal');
+    const closeBtn = modal.querySelector('.close');
+    const cancelBtn = document.getElementById('cancel-skill-edit');
+    const form = document.getElementById('skill-edit-form');
+    
+    // 点击关闭按钮关闭模态框
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+    };
+    
+    // 点击取消按钮关闭模态框
+    cancelBtn.onclick = function() {
+        modal.style.display = 'none';
+    };
+    
+    // 点击模态框外部关闭模态框
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    };
+    
+    // 处理表单提交
+    form.onsubmit = function(e) {
+        e.preventDefault();
+        saveSkill();
+    };
+}
+
+function editSkill(skillName, skillInfo) {
+    // 填充表单数据
+    document.getElementById('skill-original-name').value = skillName;
+    document.getElementById('skill-name').value = skillName;
+    document.getElementById('skill-type').value = skillInfo.类型 || '主动';
+    document.getElementById('skill-quality').value = skillInfo.品质 || 'S';
+    document.getElementById('skill-probability').value = skillInfo.发动概率 || '';
+    document.getElementById('skill-description').value = skillInfo.描述 || '';
+    
+    // 显示模态框
+    document.getElementById('skill-edit-modal').style.display = 'block';
+}
+
+function saveSkill() {
+    // 获取表单数据
+    const originalName = document.getElementById('skill-original-name').value;
+    const name = document.getElementById('skill-name').value;
+    const type = document.getElementById('skill-type').value;
+    const quality = document.getElementById('skill-quality').value;
+    const probability = document.getElementById('skill-probability').value;
+    const description = document.getElementById('skill-description').value;
+    
+    // 构造战法信息对象
+    const skillInfo = {
+        类型: type,
+        品质: quality,
+        发动概率: probability,
+        描述: description
+    };
+    
+    // 发送更新请求
+    fetch(`${API_BASE_URL}/skills/${encodeURIComponent(originalName)}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(skillInfo)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert(data.message);
+            // 关闭模态框
+            document.getElementById('skill-edit-modal').style.display = 'none';
+            // 刷新战法数据
+            refreshData();
+        } else {
+            alert('更新战法失败: ' + (data.error || '未知错误'));
+        }
+    })
+    .catch(error => {
+        console.error('更新战法失败:', error);
+        alert('更新战法失败，请稍后重试。');
+    });
 }
 
 function showSynergyDetails(heroesString) {
@@ -499,7 +698,37 @@ function goToPage(page) {
     loadHeroData(page, keyword);
 }
 
+function goToSkillPage(page) {
+    const keyword = document.getElementById('data-search').value.trim();
+    loadSkillData(page, keyword);
+}
+
 function searchHeroes() {
     // 此函数用于智能配将模块的搜索功能
     console.log('搜索功能待实现');
+}
+
+// 切换数据标签页
+function switchDataTab(tab) {
+    // 隐藏所有数据表格
+    document.getElementById('hero-data-table').style.display = 'none';
+    document.getElementById('skill-data-table').style.display = 'none';
+    
+    // 隐藏所有筛选控件
+    document.getElementById('hero-filter-box').style.display = 'none';
+    document.getElementById('skill-filter-box').style.display = 'none';
+    
+    // 移除所有标签的活动状态
+    document.querySelectorAll('.data-tab').forEach(t => t.classList.remove('active'));
+    
+    // 显示选中的表格和筛选控件并设置活动状态
+    if (tab === 'hero') {
+        document.getElementById('hero-data-table').style.display = 'block';
+        document.getElementById('hero-filter-box').style.display = 'block';
+        document.querySelector('.data-tab[data-tab="hero"]').classList.add('active');
+    } else if (tab === 'skill') {
+        document.getElementById('skill-data-table').style.display = 'block';
+        document.getElementById('skill-filter-box').style.display = 'block';
+        document.querySelector('.data-tab[data-tab="skill"]').classList.add('active');
+    }
 }
