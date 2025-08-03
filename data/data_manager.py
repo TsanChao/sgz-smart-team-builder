@@ -97,12 +97,12 @@ class DataManager:
                 result[name] = info
         return result
     
-    def get_announcement_list(self, page: int = 1, size: int = 20) -> Optional[Dict[str, Any]]:
+    def get_announcement_list(self, page: int = 0, size: int = 20) -> Optional[Dict[str, Any]]:
         """
         获取游戏公告列表
         
         Args:
-            page: 页码
+            page: 页码（从0开始）
             size: 每页数量
             
         Returns:
@@ -145,7 +145,7 @@ class DataManager:
             所有公告列表数据
         """
         all_announcements = []
-        page = 1
+        page = 0  # 从第0页开始
         
         # 先获取第一页，获取总数
         print(f"正在获取第 {page} 页公告...")
@@ -167,7 +167,7 @@ class DataManager:
         print(f"总共有 {total} 条公告, {total_pages} 页")
         
         # 获取后续页面
-        for page in range(2, min(total_pages + 1, 10)):  # 限制最多获取10页
+        for page in range(1, min(total_pages, 100)):  # 限制最多获取100页
             print(f"正在获取第 {page} 页公告...")
             page_data = self.get_announcement_list(page=page, size=size)
             if page_data:
