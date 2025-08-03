@@ -252,46 +252,85 @@ class DataManager:
             "skill_updates": []
         }
         
-        # 匹配新增武将
-        new_hero_pattern = r"新增武将：([^，。]+)"
-        new_hero_matches = re.findall(new_hero_pattern, content)
-        for match in new_hero_matches:
-            heroes = [hero.strip() for hero in match.split("、") if hero.strip()]
-            for hero in heroes:
-                updates["new_heroes"].append({
-                    "name": hero,
-                    "details": {}
-                })
+        # 如果内容为空，直接返回空的更新信息
+        if not content:
+            return updates
         
-        # 匹配武将属性调整
-        hero_attr_pattern = r"([^，。]+)：([\s\S]*?)(?=(?:\n\n)|$)"
-        hero_attr_updates = re.findall(hero_attr_pattern, content)
-        for hero_name, update_details in hero_attr_updates:
-            if ("属性" in update_details or "成长" in update_details) and "武将" not in hero_name:
-                updates["hero_updates"].append({
-                    "name": hero_name,
-                    "details": update_details
-                })
+        # 清理HTML标签
+        clean_content = re.sub(r'<[^>]+>', '', content)
+        
+        # 匹配新增武将
+        new_hero_sections = re.findall(r"新增武将[：:]\s*([^\n]+)", clean_content)
+        for section in new_hero_sections:
+            # 分割并清理武将名
+            heroes = [hero.strip() for hero in re.split(r"[、,、]", section) if hero.strip()]
+            for hero in heroes:
+                # 进一步清理武将名
+                hero = re.sub(r"[，。\n\r]", "", hero).strip()
+                if hero:
+                    updates["new_heroes"].append({
+                        "name": hero,
+                        "details": {}
+                    })
         
         # 匹配新增战法
-        new_skill_pattern = r"新增战法：([^，。]+)"
-        new_skill_matches = re.findall(new_skill_pattern, content)
-        for match in new_skill_matches:
-            skills = [skill.strip() for skill in match.split("、") if skill.strip()]
+        new_skill_sections = re.findall(r"新增战法[：:]\s*([^\n]+)", clean_content)
+        for section in new_skill_sections:
+            # 分割并清理战法名
+            skills = [skill.strip() for skill in re.split(r"[、,、]", section) if skill.strip()]
             for skill in skills:
-                updates["new_skills"].append({
-                    "name": skill,
-                    "details": {}
-                })
+                # 进一步清理战法名
+                skill = re.sub(r"[，。\n\r]", "", skill).strip()
+                if skill:
+                    updates["new_skills"].append({
+                        "name": skill,
+                        "details": {}
+                    })
+        
+        # 匹配武将调整 - 更智能的匹配
+        # 寻找包含"属性"或"成长"或适性调整的段落
+        lines = clean_content.split('\n')
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            # 如果这一行包含武将名特征（通常以人名开头）并且下一行包含属性信息
+            if re.search(r'^[\u4e00-\u9fff]{2,5}[：:]', line) and i + 1 < len(lines):
+                hero_match = re.search(r'^([\u4e00-\u9fff]{2,5})[：:]', line)
+                if hero_match:
+                    hero_name = hero_match.group(1)
+                    # 确保这个是武将而不是场景名
+                    if hero_name not in ["长安之乱", "龙争虎斗"]:
+                        # 收集接下来几行的属性信息
+                        details = line + "\n"
+                        j = i + 1
+                        while j < len(lines) and not re.search(r'^[\u4e00-\u9fff]{2,5}[：:]|^新增|===|---', lines[j].strip()):
+                            if lines[j].strip():
+                                details += lines[j] + "\n"
+                            j += 1
+                        
+                        # 检查details中是否包含属性调整关键词
+                        if any(keyword in details for keyword in ["属性", "成长", "适性", "兵力"]):
+                            updates["hero_updates"].append({
+                                "name": hero_name,
+                                "details": details.strip()
+                            })
+                        i = j  # 跳过已处理的行
+                        continue
+            i += 1
         
         # 匹配战法调整
-        skill_update_pattern = r"([^，。]+)战法(?:效果)?(?:调整|优化)：([\s\S]*?)(?=(?:\n\n)|$)"
-        skill_updates_matches = re.findall(skill_update_pattern, content)
-        for skill_name, update_details in skill_updates_matches:
-            updates["skill_updates"].append({
-                "name": skill_name,
-                "details": update_details
-            })
+        skill_update_sections = re.findall(r"([^\n]*)战法[^\n]*?(?:调整|优化|改动)[^\n]*", clean_content)
+        for section in skill_update_sections:
+            # 提取战法名
+            skill_match = re.search(r'^([^\n：:]+?)[：:]', section)
+            if skill_match:
+                skill_name = skill_match.group(1).strip()
+                # 确保这个是战法而不是场景名
+                if skill_name not in ["长安之乱", "龙争虎斗"]:
+                    updates["skill_updates"].append({
+                        "name": skill_name,
+                        "details": section.strip()
+                    })
         
         return updates
     
@@ -306,14 +345,30 @@ class DataManager:
             更新是否成功
         """
         try:
-            # 获取公告内容和标题
+            # 获取公告内容和标题 - 处理不同的API响应格式
+            content = ""
+            title = ""
+            
+            # 尝试第一种格式 (infoDetail)
             result = announcement_detail.get("result", {})
             data = result.get("data", {})
             info_detail = data.get("infoDetail", {})
             content = info_detail.get("content", "")
             title = info_detail.get("title", "")
             
+            # 如果content为空，尝试第二种格式 (直接在result中)
+            if not content:
+                content = result.get("content", "")
+                title = result.get("title", "")
+            
+            # 如果content为空，尝试其他可能的字段
+            if not content:
+                content = info_detail.get("textContent", "")
+            if not content:
+                content = info_detail.get("htmlContent", "")
+            
             print(f"处理公告: {title}")
+            print(f"内容长度: {len(content) if content else 0}")
             
             # 解析更新内容
             updates = self.parse_update_content(content)
@@ -330,9 +385,24 @@ class DataManager:
             
             # 显示解析结果
             print(f"检测到 {len(updates['new_heroes'])} 个新增武将")
+            if updates['new_heroes']:
+                for hero in updates['new_heroes']:
+                    print(f"  - {hero['name']}")
+                    
             print(f"检测到 {len(updates['hero_updates'])} 个武将更新")
+            if updates['hero_updates']:
+                for hero in updates['hero_updates']:
+                    print(f"  - {hero['name']}: {hero['details'][:100]}...")
+                    
             print(f"检测到 {len(updates['new_skills'])} 个新增战法")
+            if updates['new_skills']:
+                for skill in updates['new_skills']:
+                    print(f"  - {skill['name']}")
+                    
             print(f"检测到 {len(updates['skill_updates'])} 个战法更新")
+            if updates['skill_updates']:
+                for skill in updates['skill_updates']:
+                    print(f"  - {skill['name']}: {skill['details'][:100]}...")
             
             # 注意：这里我们仅记录更新信息，实际的数据更新需要手动完成
             # 因为我们没有完整的武将/战法数据结构定义
@@ -341,6 +411,8 @@ class DataManager:
             return True
         except Exception as e:
             print(f"更新本地数据时出错: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def _save_update_log(self, update_log: Dict[str, Any]) -> None:
